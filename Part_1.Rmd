@@ -1,0 +1,85 @@
+---
+title: "Educational Learning Analytics - Classification problem"
+author: "Krisztina Gyalai"
+date: "19/01/2022"
+output: html_document
+---
+
+**Aim** test 
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#load tidyverse
+library(tidyverse)
+```
+
+## Data preparation and attribute selection 
+
+Dataset consist of 7 files which fits into three categories:
+
+1. Student Activities
+2. Student Demographics 
+3. Module Presentation 
+  
+The full list of attributes and their description available at the [Open Dataset Webpage](https://analyse.kmi.open.ac.uk/open_dataset)
+
+There are three required files identified: 
+1. studentInfo: All required background information of the student including the target feature: 
+2. studentVle: Contain information of the student engagement with the study materials (number of clicks on website) treated as main predictor. 
+3. studentRegistration: students with withdrawal date < 0 need to be eliminated from the study as they left course before its started they success/failure cannot be measured - would result noise to the model. 
+
+```{r echo=TRUE}
+#load datasets 
+main <- read_csv("~/git/OU Learning Analytics/Raw Data/studentInfo.csv",show_col_types = FALSE)
+reg <- read_csv("~/git/OU Learning Analytics/Raw Data/studentRegistration.csv",show_col_types = FALSE)
+vle <- read_csv("~/git/OU Learning Analytics/Raw Data/studentVle.csv",show_col_types = FALSE)
+
+#merge student registration into the main data set 
+#unique identifier student id
+main_reg <- merge(main, reg, by ="id_student")
+
+```
+
+According to the data source the student id is a unique identifier across the 7 data files. However, by merging the studentRegistration file to the studentInfo, the row numbers increases by `r 40801-32593` indicates introduced duplicates. 
+
+Investigating duplicates: 
+```{r echo=TRUE}
+#find duplicates in merged df (in student id)
+duplicates <- main_reg %>%
+  group_by(id_student)%>%
+  summarise(n=n())%>%
+  filter(n>1)
+#counts 
+unique(duplicates$n)
+```
+
+In some extreme cases student number occurs 25 times within the merged df. 
+
+```{r echo=TRUE}
+#filter extreme cases
+duplicates %>%
+  filter(n >= 16)
+
+```
+```{r echo=TRUE, fig.length = 2}
+#randomly select one student to see details - 584077 n = 25
+main_reg %>%
+  filter(id_student == 584077)%>%
+  select(code_module.x,code_presentation.x,date_registration,date_unregistration)
+
+```
+The above example show where and while is the error introduced through merging. 
+**student id** is unique identifier of the student, but **not a unique identifier** across the data set. 
+As the above example show: 
+
+  * It is possible for the student to enroll to the same module (code_module) more than once.  
+  * It is possible for the student to enroll to the same module in different presentations (code_presentation) more than once. 
+  
+  * It is NOT possible to the student to enroll to the same module and same presentation more than once. 
+
+Therefore to avoid to introduce duplicates and errors through merging, the merging must be based on ALL three attributes - the 3 required df need to be broken up per modules and per presentation before merging. 
+
+ghfhgfhgf
+
