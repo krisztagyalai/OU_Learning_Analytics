@@ -81,5 +81,507 @@ As the above example show:
 
 Therefore to avoid to introduce duplicates and errors through merging, the merging must be based on ALL three attributes - the 3 required df need to be broken up per modules and per presentation before merging. 
 
-ghfhgfhgf
+```{r}
+#AAA
+#separate main file by module and presentation 
+unique(main$code_module)
+main_A <- main %>%
+  filter(code_module == "AAA")
+#2013J
+unique(main_A$code_presentation)
+A_2013J <- main_A%>%
+  filter(code_presentation == "2013J")
+#2014J
+A_2014J <- main_A%>%
+  filter(code_presentation == "2014J")
+
+#registration 
+#select only the columns that want to keep
+reg_A <- reg %>%
+  filter(code_module =="AAA")
+reg_2013J <- reg_A %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,date_unregistration)
+reg_2014J <- reg_A %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,date_unregistration)
+  
+
+#vle 
+#group by student number
+#select only the columns that want to keep 
+vle_A <- vle %>%
+  filter(code_module == "AAA")
+vle_2013J <- vle_A %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+#2013J vle 5 row less than main and reg - check how much students unregistered before start date
+reg_2013J%>%
+  filter(date_unregistration <= 0)
+
+#there are 7 student unregistered before module started but only 5 missing in vle 
+#there are still some discrepancy but is greatly reduced  
+
+vle_2014J <- vle_A %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merge main and registration 2013J
+mr_A_2013J <- merge(A_2013J,reg_2013J,by="id_student")
+#add vle
+mrv_A_2013J <- merge(mr_A_2013J, vle_2013J, by="id_student")
+
+#repeat for 2014J
+mr_A_2014J <- merge(A_2014J, reg_2014J, by="id_student")
+#add vle 
+mrv_A_2014J <- merge(mr_A_2014J, vle_2014J, by="id_student")
+
+#combine the two files together to archive the merged data frame for module AAA
+AAA <- rbind(mrv_A_2013J, mrv_A_2014J)
+
+```
+
+Breaking up files per presentation and by module type then combine them back together is successfully eliminate the errors, therefore needs to be repeated to all seven presentations individually. 
+
+```{r}
+#BBB
+main_B <- main %>%
+  filter(code_module == "BBB")
+#check how many presentations there
+unique(main_B$code_presentation)
+#there are four different files needed 
+main_B_2013B <- main_B%>%
+  filter(code_presentation == "2013B")
+main_B_2013J <- main_B %>%
+  filter(code_presentation =="2013J")
+main_B_2014B <- main_B %>%
+  filter(code_presentation == "2014B")
+main_B_2014J <- main_B %>%
+  filter(code_presentation == "2014J")
+
+#break registration
+reg_B <- reg %>%
+  filter(code_module == "BBB")
+reg_B_2013B <- reg_B%>%
+  filter(code_presentation == "2013B")%>%
+    select(id_student,date_unregistration)
+reg_B_2013J <- reg_B %>%
+  filter(code_presentation =="2013J")%>%
+    select(id_student,date_unregistration)
+reg_B_2014B <- reg_B %>%
+  filter(code_presentation == "2014B")%>%
+    select(id_student,date_unregistration)
+reg_B_2014J <- reg_B %>%
+  filter(code_presentation == "2014J")%>%
+    select(id_student,date_unregistration)
+
+#vle
+vle_B <- vle %>%
+  filter(code_module == "BBB")
+vle_B_2013B <- vle_B %>%
+  filter(code_presentation == "2013B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_B_2013J <- vle_B %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_B_2014B <- vle_B %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_B_2014J <- vle_B %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merging 
+#merge main and registration 2013B
+mr_B_2013B <- merge(main_B_2013B,reg_B_2013B,by="id_student")
+#add vle
+mrv_B_2013B <- merge(mr_B_2013B, vle_B_2013B, by="id_student")
+#B_2013J
+mr_B_2013J <- merge(main_B_2013J,reg_B_2013J,by="id_student")
+#add vle
+mrv_B_2013J <- merge(mr_B_2013J, vle_B_2013J, by="id_student")
+#2014_B
+mr_B_2014B <- merge(main_B_2014B,reg_B_2014B,by="id_student")
+#add vle
+mrv_B_2014B <- merge(mr_B_2014B, vle_B_2014B, by="id_student")
+#B_2014J
+mr_B_2014J <- merge(main_B_2014J,reg_B_2014J,by="id_student")
+#add vle
+mrv_B_2014J <- merge(mr_B_2014J, vle_B_2014J, by="id_student")
+
+BBB <- rbind(mrv_B_2013B,mrv_B_2013J,mrv_B_2014B, mrv_B_2014J)
+
+#there are significant amount of rows lost during the merging process put it down to the fact that there were data missing in  vle file 
+#otherwise possible never entered students to vle where no clicks - unregistered - check 
+vle_B%>%
+  filter(sum_click == 0)
+#there is no 0 count vle available means that students who had no clicks on website were never documented in this file 
+#check unregistered students before start date 
+reg_B %>%
+  filter(date_unregistration <= 0)
+#there are 988 student unregistered before module B started 
+#there is still some row loss is unaccounted (299) but the majority of data loss is explainable
+
+```
+```{r}
+#CCC
+main_C <- main%>%
+  filter(code_module == "CCC")
+unique(main_C$code_presentation)
+#2014B
+main_C_2014B <- main_C%>%
+  filter(code_presentation == "2014B")
+#2014J
+main_C_2014J <- main_C %>%
+  filter(code_presentation == "2014J")
+
+#reg
+reg_C <- reg%>%
+  filter(code_module == "CCC")
+reg_C_2014B <- reg_C%>%
+  filter(code_presentation == "2014B")%>%
+   select(id_student,date_unregistration)
+reg_C_2014J <- reg_C %>%
+  filter(code_presentation == "2014J")%>%
+   select(id_student,date_unregistration)
+
+#vle
+vle_C <- vle %>%
+  filter(code_module == "CCC")
+vle_C_2014B <- vle_C %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_C_2014J <- vle_C %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merge
+mr_C_2014B <- merge(main_C_2014B,reg_C_2014B,by="id_student")
+#add vle
+mrv_C_2014B <- merge(mr_C_2014B, vle_C_2014B, by="id_student")
+mr_C_2014J <- merge(main_C_2014J,reg_C_2014J,by="id_student")
+#add vle
+mrv_C_2014J <- merge(mr_C_2014J, vle_C_2014J, by="id_student")
+
+CCC <- rbind(mrv_C_2014B,mrv_C_2014J)
+```
+
+```{r}
+#DDD
+main_D <- main %>%
+  filter(code_module == "DDD")
+unique(main_D$code_presentation)
+
+#there are four different files needed 
+main_D_2013B <- main_D%>%
+  filter(code_presentation == "2013B")
+main_D_2013J <- main_D %>%
+  filter(code_presentation =="2013J")
+main_D_2014B <- main_D %>%
+  filter(code_presentation == "2014B")
+main_D_2014J <- main_D %>%
+  filter(code_presentation == "2014J")
+
+#break registration
+reg_D <- reg %>%
+  filter(code_module == "DDD")
+reg_D_2013B <- reg_D%>%
+  filter(code_presentation == "2013B")%>%
+    select(id_student,date_unregistration)
+reg_D_2013J <- reg_D %>%
+  filter(code_presentation =="2013J")%>%
+    select(id_student,date_unregistration)
+reg_D_2014B <- reg_D %>%
+  filter(code_presentation == "2014B")%>%
+    select(id_student,date_unregistration)
+reg_D_2014J <- reg_D %>%
+  filter(code_presentation == "2014J")%>%
+    select(id_student,date_unregistration)
+
+#vle
+vle_D <- vle %>%
+  filter(code_module == "DDD")
+vle_D_2013B <- vle_D %>%
+  filter(code_presentation == "2013B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_D_2013J <- vle_D %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_D_2014B <- vle_D %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_D_2014J <- vle_D %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merging 
+
+mr_D_2013B <- merge(main_D_2013B,reg_D_2013B,by="id_student")
+#add vle
+mrv_D_2013B <- merge(mr_D_2013B, vle_D_2013B, by="id_student")
+#D_2013J
+mr_D_2013J <- merge(main_D_2013J,reg_D_2013J,by="id_student")
+#add vle
+mrv_D_2013J <- merge(mr_D_2013J, vle_D_2013J, by="id_student")
+#2014_B
+mr_D_2014B <- merge(main_D_2014B,reg_D_2014B,by="id_student")
+#add vle
+mrv_D_2014B <- merge(mr_D_2014B, vle_D_2014B, by="id_student")
+#D_2014J
+mr_D_2014J <- merge(main_D_2014J,reg_D_2014J,by="id_student")
+#add vle
+mrv_D_2014J <- merge(mr_D_2014J, vle_D_2014J, by="id_student")
+
+DDD <- rbind(mrv_D_2013B,mrv_D_2013J,mrv_D_2014B, mrv_D_2014J)
+
+```
+```{r}
+#EEE
+main_E <- main %>%
+  filter(code_module == "EEE")
+unique(main_E$code_presentation)
+
+#there are three different files needed 
+main_E_2013J <- main_E %>%
+  filter(code_presentation =="2013J")
+main_E_2014B <- main_E %>%
+  filter(code_presentation == "2014B")
+main_E_2014J <- main_E %>%
+  filter(code_presentation == "2014J")
+
+#break registration
+reg_E <- reg %>%
+  filter(code_module == "EEE")
+reg_E_2013J <- reg_E %>%
+  filter(code_presentation =="2013J")%>%
+    select(id_student,date_unregistration)
+reg_E_2014B <- reg_E %>%
+  filter(code_presentation == "2014B")%>%
+    select(id_student,date_unregistration)
+reg_E_2014J <- reg_E %>%
+  filter(code_presentation == "2014J")%>%
+    select(id_student,date_unregistration)
+
+#vle
+vle_E <- vle %>%
+  filter(code_module == "EEE")
+vle_E_2013J <- vle_E %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_E_2014B <- vle_E %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_E_2014J <- vle_E %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merging 
+#E_2013J
+mr_E_2013J <- merge(main_E_2013J,reg_E_2013J,by="id_student")
+#add vle
+mrv_E_2013J <- merge(mr_E_2013J, vle_E_2013J, by="id_student")
+#2014_B
+mr_E_2014B <- merge(main_E_2014B,reg_E_2014B,by="id_student")
+#add vle
+mrv_E_2014B <- merge(mr_E_2014B, vle_E_2014B, by="id_student")
+#E_2014J
+mr_E_2014J <- merge(main_E_2014J,reg_E_2014J,by="id_student")
+#add vle
+mrv_E_2014J <- merge(mr_E_2014J, vle_E_2014J, by="id_student")
+
+EEE <- rbind(mrv_E_2013J,mrv_E_2014B, mrv_E_2014J)
+
+```
+
+```{r}
+#FFF
+main_F <- main %>%
+  filter(code_module == "FFF")
+unique(main_F$code_presentation)
+
+#there are four different files needed 
+main_F_2013B <- main_F%>%
+  filter(code_presentation == "2013B")
+main_F_2013J <- main_F %>%
+  filter(code_presentation =="2013J")
+main_F_2014B <- main_F %>%
+  filter(code_presentation == "2014B")
+main_F_2014J <- main_F %>%
+  filter(code_presentation == "2014J")
+
+#break registration
+reg_F <- reg %>%
+  filter(code_module == "FFF")
+reg_F_2013B <- reg_F%>%
+  filter(code_presentation == "2013B")%>%
+    select(id_student,date_unregistration)
+reg_F_2013J <- reg_F %>%
+  filter(code_presentation =="2013J")%>%
+    select(id_student,date_unregistration)
+reg_F_2014B <- reg_F %>%
+  filter(code_presentation == "2014B")%>%
+    select(id_student,date_unregistration)
+reg_F_2014J <- reg_F %>%
+  filter(code_presentation == "2014J")%>%
+    select(id_student,date_unregistration)
+
+#vle
+vle_F <- vle %>%
+  filter(code_module == "FFF")
+vle_F_2013B <- vle_F %>%
+  filter(code_presentation == "2013B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_F_2013J <- vle_F %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_F_2014B <- vle_F %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_F_2014J <- vle_F %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merging 
+mr_F_2013B <- merge(main_F_2013B,reg_F_2013B,by="id_student")
+#add vle
+mrv_F_2013B <- merge(mr_F_2013B, vle_F_2013B, by="id_student")
+#F_2013J
+mr_F_2013J <- merge(main_F_2013J,reg_F_2013J,by="id_student")
+#add vle
+mrv_F_2013J <- merge(mr_F_2013J, vle_F_2013J, by="id_student")
+#2014_B
+mr_F_2014B <- merge(main_F_2014B,reg_F_2014B,by="id_student")
+#add vle
+mrv_F_2014B <- merge(mr_F_2014B, vle_F_2014B, by="id_student")
+#F_2014J
+mr_F_2014J <- merge(main_F_2014J,reg_F_2014J,by="id_student")
+#add vle
+mrv_F_2014J <- merge(mr_F_2014J, vle_F_2014J, by="id_student")
+
+FFF <- rbind(mrv_F_2013B,mrv_F_2013J,mrv_F_2014B, mrv_F_2014J)
+```
+
+
+```{r}
+#GGG
+main_G <- main %>%
+  filter(code_module == "GGG")
+unique(main_G$code_presentation)
+
+#there are three different files needed 
+main_G_2013J <- main_G %>%
+  filter(code_presentation =="2013J")
+main_G_2014B <- main_G %>%
+  filter(code_presentation == "2014B")
+main_G_2014J <- main_G %>%
+  filter(code_presentation == "2014J")
+
+#break registration
+reg_G <- reg %>%
+  filter(code_module == "GGG")
+reg_G_2013J <- reg_G %>%
+  filter(code_presentation =="2013J")%>%
+    select(id_student,date_unregistration)
+reg_G_2014B <- reg_G %>%
+  filter(code_presentation == "2014B")%>%
+    select(id_student,date_unregistration)
+reg_G_2014J <- reg_G %>%
+  filter(code_presentation == "2014J")%>%
+    select(id_student,date_unregistration)
+
+#vle
+vle_G <- vle %>%
+  filter(code_module == "GGG")
+vle_G_2013J <- vle_G %>%
+  filter(code_presentation == "2013J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_G_2014B <- vle_G %>%
+  filter(code_presentation == "2014B")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+vle_G_2014J <- vle_G %>%
+  filter(code_presentation == "2014J")%>%
+  select(id_student,sum_click)%>%
+  group_by(id_student)%>%
+  summarise(clicks = sum(sum_click))
+
+#merging 
+mr_G_2013J <- merge(main_G_2013J,reg_G_2013J,by="id_student")
+#add vle
+mrv_G_2013J <- merge(mr_G_2013J, vle_G_2013J, by="id_student")
+#2014_B
+mr_G_2014B <- merge(main_G_2014B,reg_G_2014B,by="id_student")
+#add vle
+mrv_G_2014B <- merge(mr_G_2014B, vle_G_2014B, by="id_student")
+#G_2014J
+mr_G_2014J <- merge(main_G_2014J,reg_G_2014J,by="id_student")
+#add vle
+mrv_G_2014J <- merge(mr_G_2014J, vle_G_2014J, by="id_student")
+
+GGG <- rbind(mrv_G_2013J,mrv_G_2014B, mrv_G_2014J)
+
+```
+
+
+
+
+
+All separate merging carried out the individual files can be added back together to create the main working file. 
+
+```{r}
+main_data <- rbind(AAA,BBB,CCC,DDD,EEE,FFF,GGG)
+
+```
+
+There are `r 32593-29228` row lost in the process identified as those students whom unregistered from the course before its started and had 0 clicks on the module website. 
+
+Write out the data file for EDA and further work. Proceed to next stage #'Part_2'. 
+
+```{r}
+#write out file
+write.csv(main_data,"~/git/OU Learning Analytics/Raw Data/main_data.csv")
+```
+
+
 
